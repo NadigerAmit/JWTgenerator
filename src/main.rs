@@ -24,19 +24,16 @@ use std::io;
         issuer: String,
         #[serde(rename = "aud")]
         audience: String,
-        #[serde(rename = "exp")]
-        expiration: i64,
         #[serde(flatten)]
         additional_claims: BTreeMap<String, String>,
     }
     
     impl CustomClaims {
-        fn new(subject: &str, audience: &str,iss:&str, expiration: i64) -> Self {
+        fn new(subject: &str, audience: &str,iss:&str) -> Self {
             CustomClaims {
                 subject: subject.to_owned(),
                 issuer:iss.to_owned(),
                 audience: audience.to_owned(),
-                expiration,
                 additional_claims: BTreeMap::new(),
             }
         }
@@ -153,7 +150,7 @@ pub fn generate_jwt_token(
         let header = Header::default();
 
         // Create custom claims.
-        let mut custom_claims = CustomClaims::new(sub, aud, iss,expires_in);
+        let mut custom_claims = CustomClaims::new(sub, aud, iss);
 
         // Add additional claims to the custom claims struct.
         for (key, value) in additional_claims.iter() {
@@ -162,7 +159,7 @@ pub fn generate_jwt_token(
 
         let claims = Claims::new(custom_claims)
         .set_duration_and_issuance(&time_options, Duration::seconds(expires_in))
-        .set_not_before(Utc::now() - Duration::hours(1));
+        .set_not_before(Utc::now());
 
         match Hs256.token(header.clone(), &claims, &key) {
             Ok(token) => {
@@ -187,9 +184,9 @@ pub fn generate_jwt_token(
 
         let time_options = TimeOptions::default();
 
-        let mut custom_claims = Claims::new(CustomClaims::new(sub, aud, iss,expires_in))
+        let mut custom_claims = Claims::new(CustomClaims::new(sub, aud, iss))
             .set_duration_and_issuance(&time_options, Duration::seconds(expires_in))
-            .set_not_before(Utc::now() - Duration::hours(1));
+            .set_not_before(Utc::now());
 
         // Add additional claims to the custom claims struct.
         for (key, value) in additional_claims.iter() {
